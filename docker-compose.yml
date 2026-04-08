@@ -1,0 +1,21 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      SERVER: PRD
+    restart: unless-stopped
+
+  runners:
+    build:
+      context: .
+      dockerfile: Dockerfile.runners
+    env_file: .env
+    environment:
+      SERVER: PRD
+      APP_ROOT: /app
+    restart: unless-stopped

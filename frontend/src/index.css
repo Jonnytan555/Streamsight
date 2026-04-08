@@ -1,0 +1,65 @@
+/* Dark matter theme */
+
+:root {
+  --dm-bg:        #05070f;
+  --dm-surface:   #0d1117;
+  --dm-card:      #0f1923;
+  --dm-border:    #1e2d3d;
+  --dm-text:      #c9d1d9;
+  --dm-muted:     #6e7f8d;
+  --dm-accent:    #58a6ff;
+}
+
+body {
+  background-color: var(--dm-bg);
+  background-image:
+    radial-gradient(ellipse at 20% 10%, rgba(31, 56, 100, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(15, 30, 60, 0.3) 0%, transparent 50%);
+  min-height: 100vh;
+  color: var(--dm-text);
+}
+
+/* Cards */
+.card {
+  background-color: var(--dm-card) !important;
+  border: 1px solid var(--dm-border) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  border-color: rgba(88, 166, 255, 0.3) !important;
+  box-shadow: 0 0 20px rgba(88, 166, 255, 0.06) !important;
+}
+
+/* Modal */
+.modal-content {
+  background-color: var(--dm-surface) !important;
+  border: 1px solid var(--dm-border) !important;
+}
+
+/* Inputs + selects */
+.form-control, .form-select {
+  background-color: var(--dm-surface) !important;
+  border-color: var(--dm-border) !important;
+  color: var(--dm-text) !important;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--dm-accent) !important;
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15) !important;
+}
+
+.form-control::placeholder {
+  color: var(--dm-muted) !important;
+}
+
+/* Header rule */
+hr {
+  border-color: var(--dm-border);
+  opacity: 1;
+}
+
+/* Login card */
+.min-vh-100.bg-light {
+  background-color: var(--dm-bg) !important;
+}

@@ -1,0 +1,13 @@
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# Set APP_ROOT to wherever the repo is cloned, e.g. /home/ubuntu/streamsight
+# Install: sudo cp streamsight /etc/cron.d/streamsight && sudo chmod 0644 /etc/cron.d/streamsight
+
+# DB runners — every 6 hours
+0 */6 * * * ubuntu cd /home/ubuntu/streamsight && python -m runners.db.ensog.run >> /var/log/streamsight.log 2>&1
+
+# Web runners — every 6 hours
+0 */6 * * * ubuntu cd /home/ubuntu/streamsight && python -m runners.web.gas_web.run >> /var/log/streamsight.log 2>&1
+0 */6 * * * ubuntu cd /home/ubuntu/streamsight && python -m runners.web.oil_web.run >> /var/log/streamsight.log 2>&1
+0 */6 * * * ubuntu cd /home/ubuntu/streamsight && python -m runners.web.ags_web.run >> /var/log/streamsight.log 2>&1

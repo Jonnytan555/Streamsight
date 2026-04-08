@@ -1,0 +1,11 @@
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# DB runners — every 6 hours
+0 */6 * * * root cd /app && python -m runners.db.ensog.run >> /var/log/cron.log 2>&1
+
+# Web runners — every 6 hours
+0 */6 * * * root cd /app && python -m runners.web.gas_web.run >> /var/log/cron.log 2>&1
+0 */6 * * * root cd /app && python -m runners.web.oil_web.run >> /var/log/cron.log 2>&1
+0 */6 * * * root cd /app && python -m runners.web.ags_web.run >> /var/log/cron.log 2>&1
+
