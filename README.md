@@ -68,6 +68,26 @@ tests/                        Unit and integration tests
 
 ---
 
+## Database setup
+
+Create a `STREAMSIGHT` database in SQL Server (SSMS), then run these scripts **in order**:
+
+```
+sql/ingestion/article_queue.sql
+sql/ingestion/articles.sql
+sql/api/users.sql
+sql/api/article_likes.sql
+sql/tracking/llm_usage.sql
+sql/tracking/blocked_domains.sql
+sql/taxonomy/commodity_tree.sql   ← run last (references articles table)
+```
+
+### ENSOG DB runner
+
+The ENSOG runner reads from a separate `Scrape` SQL Server database. You need access to a server containing the `ENTSOGUrgentMarketMessages` table. If you don't have this, skip the ENSOG runner — the web runners work independently.
+
+---
+
 ## Running locally
 
 **1. Install dependencies**
@@ -79,6 +99,7 @@ pip install -r requirements.txt
 ```bash
 cp .env.example .env
 # Set PERPLEXITY_API_KEY and ANTHROPIC_API_KEY
+# Or set DEMO_MODE=true to test without API keys (see below)
 ```
 
 **3. Run a web runner**
@@ -88,10 +109,14 @@ python -m runners.web.oil_web.run
 python -m runners.web.ags_web.run
 ```
 
-**4. Run a DB runner**
+**4. Run the ENSOG DB runner** *(requires access to Scrape DB)*
 ```bash
 python -m runners.db.ensog.run
 ```
+
+### Testing without API keys (demo mode)
+
+Set `DEMO_MODE=true` in your `.env`. The pipeline runs end-to-end but skips Claude and Perplexity — articles are written using the raw body text as the summary. No API keys required.
 
 ---
 
@@ -125,8 +150,18 @@ Or use the API-only profile for a remote server where runners run elsewhere.
 | Linux cron | Direct server install | `scheduling/cron/streamsight` |
 | Windows Task Scheduler | Local Windows machine | `scheduling/windows/*.bat` |
 | Airflow | Managed Airflow | `scheduling/airflow/dags/` |
+| Dagster | Local or server | `scheduling/dagster/definitions.py` |
 
-Set `APP_ROOT` env var to the repo path when using Airflow or Linux cron directly.
+Set `APP_ROOT` env var to the repo path when using Airflow, Dagster, or Linux cron directly.
+
+### Running with Dagster
+
+```bash
+pip install dagster dagster-webserver
+dagster dev -f scheduling/dagster/definitions.py
+```
+
+Open `http://localhost:3000` — you get a full UI to trigger runs manually, view logs, and enable/disable schedules. All four runners are defined as jobs with 6-hourly schedules.
 
 ---
 

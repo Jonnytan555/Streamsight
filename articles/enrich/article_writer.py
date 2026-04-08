@@ -101,16 +101,16 @@ class ArticleWriter(_Base):
         params = {}
 
         if sector:
-            conditions.append("level_1 = :sector")
+            conditions.append("sector = :sector")
             params["sector"] = sector
         if commodity_group:
-            conditions.append("level_2 = :commodity_group")
+            conditions.append("commodity_group = :commodity_group")
             params["commodity_group"] = commodity_group
         if commodity_classification:
-            conditions.append("level_3 = :commodity_classification")
+            conditions.append("commodity_classification = :commodity_classification")
             params["commodity_classification"] = commodity_classification
         if commodity_name:
-            conditions.append("level_4 = :commodity_name")
+            conditions.append("commodity_name = :commodity_name")
             params["commodity_name"] = commodity_name
 
         if not conditions:
@@ -118,7 +118,7 @@ class ArticleWriter(_Base):
 
         where = " AND ".join(conditions) + " AND is_active = 1"
         result = conn.execute(
-            sa.text(f"SELECT TOP 1 id FROM dbo.commodity_tree WHERE {where} ORDER BY level_num DESC"),
+            sa.text(f"SELECT TOP 1 id FROM dbo.commodity_tree WHERE {where} ORDER BY level DESC"),
             params,
         ).fetchone()
 
