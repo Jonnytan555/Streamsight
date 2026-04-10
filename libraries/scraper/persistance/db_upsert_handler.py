@@ -104,8 +104,11 @@ class DbUpsertHandler:
         finally:
             self._drop_temp(temp)
 
-    # Protected alias — subclasses that call self._insert_new() work without changes
+    # Aliases for backward compatibility
     def _insert_new(self, df: pd.DataFrame) -> list[dict]:
+        return self.insert_new(df)
+
+    def handle(self, df: pd.DataFrame, dropNa: bool = True, dtype=None, created_date_column: str = "CreatedDate") -> list[dict]:
         return self.insert_new(df)
 
     def _drop_temp(self, temp: str) -> None:
