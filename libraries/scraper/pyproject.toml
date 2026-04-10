@@ -1,0 +1,15 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scraper"
+version = "2.0.0"
+requires-python = ">=3.9"
+dependencies = [
+    "pandas",
+    "requests",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["scraper"]

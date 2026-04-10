@@ -8,18 +8,21 @@ import sqlalchemy as sa
 class DbInsertNewHandler:
     """
     Inserts rows from a DataFrame into a SQL Server table, skipping rows that
-    already exist based on key_cols. Returns the newly inserted rows as a list
-    of dicts.
+    already exist based on key_cols. Returns newly inserted rows as list[dict].
 
-    Usage:
-        class MyWriter(DbInsertNewHandler):
-            def __init__(self, engine=None):
-                super().__init__(
-                    engine=engine,
-                    table_name="my_table",
-                    schema="dbo",
-                    key_cols=["source_type", "source_name", "record_id"],
-                )
+    Designed to be used standalone or as a base class:
+
+        # Standalone
+        writer = DbInsertNewHandler(engine, "articles", "dbo", ["source_type", "record_id"])
+        inserted = writer.insert_new(df)
+
+        # As a base class
+        class ArticleWriter(DbInsertNewHandler):
+            def __init__(self, engine):
+                super().__init__(engine, "articles", "dbo", ["source_type", "record_id"])
+
+            def write(self, df):
+                return self.insert_new(df)
     """
 
     def __init__(
@@ -34,7 +37,8 @@ class DbInsertNewHandler:
         self.schema = schema
         self.key_cols = key_cols
 
-    def _insert_new(self, df: pd.DataFrame) -> list[dict]:
+    def insert_new(self, df: pd.DataFrame) -> list[dict]:
+        """Insert rows that don't already exist. Returns inserted rows as list[dict]."""
         if df is None or df.empty:
             return []
 
@@ -57,11 +61,6 @@ class DbInsertNewHandler:
             )
         """
 
-        drop_sql = f"""
-            IF OBJECT_ID('[{self.schema}].[{temp}]') IS NOT NULL
-                DROP TABLE [{self.schema}].[{temp}]
-        """
-
         try:
             df.to_sql(
                 temp,
@@ -74,7 +73,7 @@ class DbInsertNewHandler:
             with self.engine.begin() as conn:
                 result = conn.execute(sa.text(insert_sql))
                 rows = result.fetchall()
-                keys = result.keys()
+                keys = list(result.keys())
 
             inserted = [dict(zip(keys, row)) for row in rows]
             logging.info("[DbInsertNewHandler] Inserted %d new rows into %s.%s",
@@ -87,8 +86,18 @@ class DbInsertNewHandler:
             raise
 
         finally:
-            try:
-                with self.engine.begin() as conn:
-                    conn.execute(sa.text(drop_sql))
-            except Exception:
-                logging.warning("[DbInsertNewHandler] Failed to drop temp table %s", temp)
+            self._drop_temp(temp)
+
+    # Protected alias — subclasses that call self._insert_new() work without changes
+    def _insert_new(self, df: pd.DataFrame) -> list[dict]:
+        return self.insert_new(df)
+
+    def _drop_temp(self, temp: str) -> None:
+        try:
+            with self.engine.begin() as conn:
+                conn.execute(sa.text(
+                    f"IF OBJECT_ID('[{self.schema}].[{temp}]') IS NOT NULL "
+                    f"DROP TABLE [{self.schema}].[{temp}]"
+                ))
+        except Exception:
+            logging.warning("[DbInsertNewHandler] Failed to drop temp table %s", temp)
