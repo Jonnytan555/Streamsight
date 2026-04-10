@@ -70,6 +70,12 @@ tests/                        Unit and integration tests
 
 ## Database setup
 
+### Docker (recommended)
+
+Schema is created automatically on first boot — no manual steps needed. See [DEPLOYMENT.md](DEPLOYMENT.md).
+
+### Local SQL Server
+
 Create a `STREAMSIGHT` database in SQL Server (SSMS), then run these scripts **in order**:
 
 ```
@@ -123,22 +129,19 @@ Set `DEMO_MODE=true` in your `.env`. The pipeline runs end-to-end but skips Clau
 ## Running with Docker
 
 ```bash
-# Start API + frontend + runners (all-in-one)
-docker compose up --build
+docker compose up -d --build
 ```
 
-- **api** — FastAPI + React at `http://localhost:8000`
-- **runners** — cron-based, fires on schedule (see `crontab`)
+Four services start automatically:
 
----
+| Service | Description |
+|---|---|
+| `db` | SQL Server 2022 (persisted volume) |
+| `db-init` | Creates schema on first boot, then exits |
+| `api` | FastAPI + React at `http://localhost:8000` |
+| `runners` | Cron-scheduled pipeline jobs |
 
-## API + frontend only (server deployment)
-
-```bash
-docker compose up api
-```
-
-Or use the API-only profile for a remote server where runners run elsewhere.
+For full server deployment instructions see [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ---
 
@@ -169,13 +172,14 @@ Open `http://localhost:3000` — you get a full UI to trigger runs manually, vie
 
 | Variable | Description | Default |
 |---|---|---|
-| `DB_SERVER` | SQL Server hostname | `localhost` |
+| `DB_SERVER` | SQL Server hostname (local only — Docker sets this automatically) | `localhost` |
 | `DB_NAME` | Main database name | `STREAMSIGHT` |
-| `DB_USER` | SQL login (required for Docker) | Windows auth |
-| `DB_PASS` | SQL password | — |
+| `DB_USER` | SQL login (local only — Docker uses `sa`) | Windows auth |
+| `DB_PASS` | SQL Server password (required for Docker) | — |
 | `SCRAPE_DB_SERVER` | WebScrapes DB hostname (if different) | same as `DB_SERVER` |
 | `PERPLEXITY_API_KEY` | Perplexity API key for web search | — |
 | `ANTHROPIC_API_KEY` | Anthropic API key for Claude | — |
+| `DEMO_MODE` | Skip Claude/Perplexity, use raw text as summary | `false` |
 | `APP_ROOT` | Repo root path (Airflow/cron) | `/app` |
 
 ---
