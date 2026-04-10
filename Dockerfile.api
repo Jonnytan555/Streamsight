@@ -31,6 +31,9 @@ RUN cd frontend && npm ci && npm run build
 # App code
 COPY . .
 
+# Install local libraries from the repo instead of from git/PyPI
+RUN pip install --no-cache-dir ./libraries/logger ./libraries/scraper ./libraries/decorators
+
 EXPOSE 8000
 # /app for appsettings/articles/utils, /app/api for app.api.* imports
 ENV PYTHONPATH=/app:/app/api

@@ -21,6 +21,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Install local libraries from the repo instead of from git/PyPI
+RUN pip install --no-cache-dir ./libraries/logger ./libraries/scraper ./libraries/decorators
+
 ENV PYTHONPATH=/app
 
 # Install crontab
