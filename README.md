@@ -120,10 +120,6 @@ python -m runners.web.ags_web.run
 python -m runners.db.ensog.run
 ```
 
-### Testing without API keys (demo mode)
-
-Set `DEMO_MODE=true` in your `.env`. The pipeline runs end-to-end but skips Claude and Perplexity — articles are written using the raw body text as the summary. No API keys required.
-
 ---
 
 ## Running with Docker
