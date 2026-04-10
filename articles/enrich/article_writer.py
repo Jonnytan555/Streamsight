@@ -6,7 +6,7 @@ import pandas as pd
 from appsettings import engine as _default_engine, ARTICLE_KEY_COLS
 
 
-from scraper.persistence.db_persistence_handler import DbPersistenceHandler as _Base
+from scraper.persistence.db_upsert_handler import DbUpsertHandler as _Base
 
 
 _DB_COLS = [
