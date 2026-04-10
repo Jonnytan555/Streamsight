@@ -1,4 +1,38 @@
 services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${DB_PASS}"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools18/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${DB_PASS}", "-Q", "SELECT 1", "-C"]
+      interval: 10s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    volumes:
+      - ./sql:/sql
+    entrypoint: >
+      bash -c "
+        /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P \"$$DB_PASS\" -C -Q \"IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = '$$DB_NAME') CREATE DATABASE [$$DB_NAME]\" &&
+        for f in /sql/tracking/*.sql /sql/ingestion/*.sql /sql/taxonomy/*.sql /sql/api/*.sql; do
+          echo \"Running $$f\" &&
+          /opt/mssql-tools18/bin/sqlcmd -S db -U sa -P \"$$DB_PASS\" -C -d \"$$DB_NAME\" -i \"$$f\" || true;
+        done
+      "
+    restart: "no"
+
   api:
     build:
       context: .
@@ -8,6 +42,11 @@ services:
     env_file: .env
     environment:
       SERVER: PRD
+      DB_SERVER: db
+      DB_USER: sa
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
 
   runners:
@@ -18,4 +57,12 @@ services:
     environment:
       SERVER: PRD
       APP_ROOT: /app
+      DB_SERVER: db
+      DB_USER: sa
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  sqldata:
