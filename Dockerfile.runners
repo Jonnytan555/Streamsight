@@ -21,6 +21,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+ENV PYTHONPATH=/app
+
 # Install crontab
 COPY crontab /etc/cron.d/streamsight
 RUN chmod 0644 /etc/cron.d/streamsight && crontab /etc/cron.d/streamsight
