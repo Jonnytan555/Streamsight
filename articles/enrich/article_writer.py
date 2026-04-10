@@ -34,8 +34,13 @@ class ArticleWriter(_Base):
 
         inserted = self._insert_new(db_df)
 
+        # Mark all queue items processed — including duplicates that already exist
+        # in the articles table. Without this they stay 'pending' and get re-enriched
+        # on every run.
+        all_candidate_ids = db_df["article_id"].dropna().astype(int).tolist()
+        self._mark_queue_processed(all_candidate_ids)
+
         if inserted:
-            self._mark_queue_processed([r["article_id"] for r in inserted if r.get("article_id")])
             self._insert_tags(inserted, enriched)
 
         return [{"id": r["id"], "title": r["title"]} for r in inserted]

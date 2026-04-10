@@ -1,38 +1,52 @@
-import os
-import sys
+from pathlib import Path
 
-_api_dir     = os.path.dirname(os.path.abspath(__file__))   # .../api/
-_project_root = os.path.dirname(_api_dir)                   # .../Streamsight/
-sys.path.insert(0, _project_root)   # for appsettings, articles, etc.
-sys.path.insert(0, _api_dir)        # for app.api.*, app.services.*, etc.
-
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import articles, auth, likes
 
+import uvicorn
+
+
+BASE_DIR = Path(__file__).resolve().parent
+FRONTEND_DIST = (BASE_DIR / ".." / "frontend" / "dist").resolve()
+
+if not FRONTEND_DIST.exists():
+    raise RuntimeError(f"Frontend build not found at: {FRONTEND_DIST}")
+
+if not (FRONTEND_DIST / "index.html").exists():
+    raise RuntimeError("index.html missing from frontend build")
+
 app = FastAPI(title="Commodity News Tracker API")
 
+# Routers
 app.include_router(articles.router)
 app.include_router(likes.router)
 app.include_router(auth.router)
 
-# In production the React app is built to frontend/dist.
-# FastAPI serves the static assets and falls back to index.html for any
-# unrecognised path so that React's client-side routing works correctly.
-_FRONTEND_DIST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "frontend", "dist")
+# Static assets (JS, CSS)
+app.mount(
+    "/assets",
+    StaticFiles(directory=str(FRONTEND_DIST / "assets")),
+    name="assets",
+)
 
-if os.path.isdir(_FRONTEND_DIST):
-    app.mount("/assets", StaticFiles(directory=os.path.join(_FRONTEND_DIST, "assets")), name="assets")
+INDEX_FILE = FRONTEND_DIST / "index.html"
 
-    @app.get("/{full_path:path}", include_in_schema=False)
-    def serve_react(full_path: str):
-        """Catch-all: return index.html so React Router handles the path."""
-        index = os.path.join(_FRONTEND_DIST, "index.html")
-        return FileResponse(index)
+
+@app.get("/", include_in_schema=False)
+def serve_root():
+    return FileResponse(INDEX_FILE)
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+def serve_spa(full_path: str):
+    if full_path.startswith(("api", "docs", "redoc", "openapi.json", "assets")):
+        raise HTTPException(status_code=404, detail="Not found")
+
+    return FileResponse(INDEX_FILE)
 
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
