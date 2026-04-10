@@ -2,15 +2,8 @@ import pandas as pd
 
 from appsettings import engine as _default_engine, QUEUE_KEY_COLS
 
-try:
-    from scraper.persistence.db_insert_new_handler import DbInsertNewHandler as _Base
-except ImportError:
-    class _Base:
-        """Stub used when the scraper library is not installed (e.g. in tests)."""
-        def __init__(self, engine=None, table_name=None, schema=None, key_cols=None):
-            self.engine = engine
-        def _insert_new(self, df):  # pragma: no cover
-            raise NotImplementedError("scraper library not installed")
+
+from scraper.persistence.db_persistence_handler import DbPersistenceHandler as _Base
 
 
 _DB_COLS = [
