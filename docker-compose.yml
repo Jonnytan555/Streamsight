@@ -44,6 +44,7 @@ services:
       SERVER: PRD
       DB_SERVER: db
       DB_USER: sa
+      PYTHONPATH: /app:/app/api:/app/libraries/logger:/app/libraries/scraper:/app/libraries/decorators
     depends_on:
       db:
         condition: service_healthy

@@ -32,7 +32,5 @@ RUN cd frontend && npm ci && npm run build
 COPY . .
 
 EXPOSE 8000
-# /app for appsettings/articles/utils, /app/api for app.api.* imports
-ENV PYTHONPATH=/app:/app/api:/app/libraries/logger:/app/libraries/scraper:/app/libraries/decorators
 WORKDIR /app/api
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
