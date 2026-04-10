@@ -8,7 +8,10 @@ import sqlalchemy as sa
 class DbUpsertHandler:
     """
     Inserts rows from a DataFrame into a SQL Server table, skipping rows that
-    already exist based on key_cols. Returns newly inserted rows as list[dict].
+    already exist. Returns newly inserted rows as list[dict].
+
+    Deduplication uses key_cols if provided. If key_cols is empty or None,
+    falls back to comparing every column (NULL-safe, handles numeric types).
 
     Designed to be used standalone or as a base class:
 
@@ -30,12 +33,12 @@ class DbUpsertHandler:
         engine: sa.Engine,
         table_name: str,
         schema: str,
-        key_cols: list[str],
+        key_cols: list[str] | None = None,
     ) -> None:
         self.engine = engine
         self.table_name = table_name
         self.schema = schema
-        self.key_cols = key_cols
+        self.key_cols = key_cols or []
 
     def insert_new(self, df: pd.DataFrame) -> list[dict]:
         """Insert rows that don't already exist. Returns inserted rows as list[dict]."""
@@ -46,9 +49,22 @@ class DbUpsertHandler:
         columns = df.columns.tolist()
         col_list = ", ".join(f"[{c}]" for c in columns)
         src_cols = ", ".join(f"source.[{c}]" for c in columns)
-        join_clause = " AND ".join(
-            f"target.[{c}] = source.[{c}]" for c in self.key_cols
-        )
+
+        if self.key_cols:
+            # Fast path — deduplicate on key columns only
+            join_clause = " AND ".join(
+                f"target.[{c}] = source.[{c}]" for c in self.key_cols
+            )
+        else:
+            # Fallback — compare every column, NULL-safe with numeric type handling
+            join_clause = " AND ".join(
+                (
+                    f"ISNULL(CAST(target.[{c}] AS NVARCHAR), '') = ISNULL(CAST(source.[{c}] AS NVARCHAR), '')"
+                    if pd.api.types.is_numeric_dtype(df[c])
+                    else f"ISNULL(target.[{c}], '') = ISNULL(source.[{c}], '')"
+                )
+                for c in columns
+            )
 
         insert_sql = f"""
             INSERT INTO [{self.schema}].[{self.table_name}] ({col_list})
